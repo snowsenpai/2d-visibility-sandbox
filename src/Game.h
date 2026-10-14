@@ -1,13 +1,17 @@
 #pragma once
 
-#include "EntityManager.h"
 #include "Entity.h"
+#include "EntityManager.h"
+#include "Geometry.h"
 
-#include <SFML/Graphics.hpp>
+#include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/System/Vector2.hpp>
 
 #include <memory>
-#include <type_traits>
+#include <optional>
 #include <random>
+#include <type_traits>
+#include <vector>
 
 class Game
 {
@@ -20,6 +24,23 @@ class Game
 
 	bool m_running = false;
 	bool m_drawCollisison = false;
+
+	std::vector<Segment>        m_segments;
+	std::optional<RayHit>       m_hit;
+	sf::Vector2f                m_rayOrigin;
+	sf::Vector2f                m_rayEnd;
+	float                       m_maxRayDistance = 1000.f;
+
+	// Lab A part 2:
+	std::vector<sf::Vector2f>   m_visPoints;
+	static constexpr int        kRayCounts[] = { 16, 32, 64, 128, 256, 512 };
+	int                         m_rayCountIndex = 3;   // 128
+	bool                        m_showRays = true;
+	bool                        m_showFan = true;
+
+	void spawnWalls();
+	void sRaycast();
+	void drawVisibilityDebug();
 
 	void init();
 	void update();

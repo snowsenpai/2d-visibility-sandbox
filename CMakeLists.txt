@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(ecs_template LANGUAGES CXX)
+project(visibility-sandbox LANGUAGES CXX)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_CXX_STANDARD 17)
@@ -14,10 +14,15 @@ FetchContent_Declare(SFML
     SYSTEM)
 FetchContent_MakeAvailable(SFML)
 
-add_executable(ecs_template
+add_executable(visibility-sandbox
     src/main.cpp
     src/Vec2.h
     src/Vec2.cpp
+    src/MathUtils.h
+    src/GeometryTests.h
+    src/GeometryTests.cpp
+    src/Geometry.h
+    src/Geometry.cpp
     src/Components.h
     src/Entity.h
     src/Entity.cpp
@@ -26,7 +31,7 @@ add_executable(ecs_template
     src/Game.h
     src/Game.cpp)
 
-target_compile_features(ecs_template PRIVATE cxx_std_17)
-target_link_libraries(ecs_template PRIVATE SFML::Graphics)
+target_compile_features(visibility-sandbox PRIVATE cxx_std_17)
+target_link_libraries(visibility-sandbox PRIVATE SFML::Graphics)
 
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ecs_template)
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT visibility-sandbox)
