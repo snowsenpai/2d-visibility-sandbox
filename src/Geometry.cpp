@@ -1,8 +1,12 @@
 #include "Geometry.h"
 #include "MathUtils.h"
 
+#include <SFML/System/Vector2.hpp>
+
 #include <cassert>
-#include <cmath>
+#include <cstdlib>
+#include <optional>
+#include <vector>
 
 namespace
 {
@@ -52,7 +56,8 @@ std::optional<RayHit> castRay(const Ray& ray, const std::vector<Segment>& segmen
 	return best;
 }
 
-std::vector<sf::Vector2f> castUniformRays(const sf::Vector2f& origin,
+std::vector<sf::Vector2f>
+castUniformRays(const sf::Vector2f& origin,
 	const std::vector<Segment>& segments,
 	int rayCount,
 	float maxDistance)

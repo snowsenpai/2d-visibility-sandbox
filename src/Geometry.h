@@ -33,7 +33,8 @@ std::optional<RayHit> castRay(const Ray& ray,
 	float maxDistance);
 
 // Lab A, part 2. One endpoint per ray, in increasing angle order.
-std::vector<sf::Vector2f> castUniformRays(const sf::Vector2f& origin,
+std::vector<sf::Vector2f>
+castUniformRays(const sf::Vector2f& origin,
 	const std::vector<Segment>& segments,
 	int rayCount,
 	float maxDistance);
