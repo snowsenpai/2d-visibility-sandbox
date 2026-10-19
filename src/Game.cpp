@@ -4,7 +4,7 @@
 #include "Vec2.h"
 
 //#ifndef NDEBUG
-//runGeometryTests();
+#include "GeometryTests.h"
 //#endif
 
 #include <SFML/Graphics/CircleShape.hpp>
@@ -58,10 +58,14 @@ void Game::quit()
 
 void Game::init()
 {
-	m_window.create(sf::VideoMode({ 800, 600 }), "Magic!");
+	runGeometryTests();
+
+	m_window.create(sf::VideoMode({ 800, 600 }), "2D Visibility Sandbox");
 	m_window.setFramerateLimit(60);
 
 	spawnPlayer();
+	spawnWalls();
+
 	m_running = true;
 }
 
@@ -97,6 +101,8 @@ void Game::spawnPlayer()
 void Game::sRender()
 {
 	m_window.clear();
+
+	drawVisibilityDebug();
 
 	for (auto& e : m_entityManager.getEntities())
 	{
@@ -308,16 +314,28 @@ void Game::sRaycast()
 	const sf::Vector2f mouseWorld = m_window.mapPixelToCoords(sf::Mouse::getPosition(m_window));
 	const sf::Vector2f toMouse = mouseWorld - m_rayOrigin;
 
-	// TODO 1: guard zero length BEFORE normalizing (normalized() asserts on a zero vector).
-	//         If the mouse is exactly on the origin, use a fallback direction like (1, 0).
-	const sf::Vector2f direction = /* TODO */ toMouse.normalized();
+	// 1: guard zero length BEFORE normalizing (normalized() asserts on a zero vector).
+	// If the mouse is exactly on the origin, use a fallback direction like (1, 0).
+	auto direction = sf::Vector2f{ 1.f, 0.f };
 
+	if (toMouse.lengthSquared() > 1e-6f)
+	{
+		direction = toMouse.normalized();
+	}
 	m_hit = castRay(Ray{ m_rayOrigin, direction }, m_segments, m_maxRayDistance);
 
-	// TODO 2: m_rayEnd = hit point if m_hit, otherwise origin + direction * m_maxRayDistance
+	// 2: m_rayEnd = hit point if m_hit, otherwise origin + direction * m_maxRayDistance
+	m_rayEnd = m_hit
+		? m_hit->point
+		: m_rayOrigin + direction * m_maxRayDistance;
 
 	// Lab A part 2: leave this commented out until Step 6
-	// m_visPoints = castUniformRays(m_rayOrigin, m_segments, kRayCounts[m_rayCountIndex], m_maxRayDistance);
+	 m_visPoints = castUniformRays(
+		 m_rayOrigin,
+		 m_segments,
+		 kRayCounts[m_rayCountIndex],
+		 m_maxRayDistance
+	 );
 }
 
 void Game::drawVisibilityDebug()
@@ -331,7 +349,8 @@ void Game::drawVisibilityDebug()
 		fan.append({ m_rayOrigin, fanColor });
 		for (const sf::Vector2f& p : m_visPoints)
 			fan.append({ p, fanColor });
-		// TODO: close the fan by appending the first point again. Why is it necessary?
+		// This closes the triangle fan by connecting the last endpoint back to the first.
+		fan.append({ m_visPoints.front(), fanColor});
 
 		m_window.draw(fan);
 	}
