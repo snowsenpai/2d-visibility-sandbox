@@ -4,6 +4,7 @@
 #include <SFML/System/Vector2.hpp>
 
 #include <cassert>
+#include <cmath>
 #include <cstdlib>
 #include <optional>
 #include <vector>
@@ -26,17 +27,26 @@ std::optional<RayHit> intersectRaySegment(const Ray& ray, const Segment& seg)
 	const sf::Vector2f E = seg.end - seg.start;     // segment direction
 	const sf::Vector2f AO = seg.start - ray.origin;  // origin -> segment start
 
-	// Math recap (derived in the previous message):
+	// Math recap:
 	//   t = cross(AO, E) / cross(D, E)   // distance along the ray
 	//   u = cross(AO, D) / cross(D, E)   // fraction along the segment
 	const float denom = cross(ray.direction, E);
 
-	// TODO 1: if |denom| < kParallelEpsilon -> parallel or collinear -> return std::nullopt
-	// TODO 2: compute t and u
-	// TODO 3: reject if t < 0, u < 0, or u > 1 (what do you do about t == 0 and u == 0/1? see defaults above)
-	// TODO 4: return RayHit{ ray.origin + ray.direction * t, t, 0 }
+	if (std::abs(denom) < kParallelEpsilon)
+	{
+		return std::nullopt;
+	}
+	
+	const auto t = cross(AO, E) / denom;
+	const auto u = cross(AO, ray.direction) / denom;
 
-	return std::nullopt; // placeholder so it compiles
+	// reject (what do you do about t == 0 and u == 0/1? see defaults above)
+	if (t < 0.f || u < 0.f || u > 1.f)
+	{
+		return std::nullopt;
+	}
+	
+	return RayHit{ ray.origin + ray.direction * t, t, 0 };
 }
 
 std::optional<RayHit> castRay(const Ray& ray, const std::vector<Segment>& segments, float maxDistance)
@@ -48,9 +58,16 @@ std::optional<RayHit> castRay(const Ray& ray, const std::vector<Segment>& segmen
 		std::optional<RayHit> hit = intersectRaySegment(ray, segments[i]);
 		if (!hit) continue;
 
-		// TODO 5: skip if hit->distance > maxDistance
-		// TODO 6: if best is empty OR hit->distance < best->distance:
-		//             set hit->segmentIndex = i, then best = hit
+		if (hit->distance > maxDistance)
+		{
+			continue;
+		}
+		
+		if (!best || hit->distance < best->distance)
+		{
+			hit->segmentIndex = i;
+			best = hit;
+		}
 	}
 
 	return best;
@@ -73,9 +90,18 @@ castUniformRays(const sf::Vector2f& origin,
 	{
 		const float angle = static_cast<float>(i) * angleStep;   // radians
 
-		// TODO 1: direction = { cos(angle), sin(angle) }  (already length 1, why?)
-		// TODO 2: hit = castRay(Ray{ origin, direction }, segments, maxDistance)
-		// TODO 3: push the hit point, or origin + direction * maxDistance if no hit
+		auto direction = sf::Vector2f{ std::cos(angle), std::sin(angle) };
+
+		const auto hit = castRay(Ray{ origin, direction }, segments, maxDistance);
+
+		if (hit)
+		{
+			points.push_back(hit->point);
+		}
+		else
+		{
+			points.push_back(origin + direction * maxDistance);
+		}
 	}
 
 	return points;

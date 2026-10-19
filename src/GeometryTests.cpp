@@ -1,8 +1,13 @@
 #include "GeometryTests.h"
 #include "Geometry.h"
 
+#include <SFML/System/Vector2.hpp>
+
 #include <cassert>
 #include <cmath>
+#include <cstdlib>
+#include <iostream>
+#include <vector>
 
 namespace
 {
@@ -42,11 +47,106 @@ void runGeometryTests()
 		assert(nearlyEqual(hit->distance, 3.f));
 	}
 
-	// TODO: diagonal ray vs horizontal wall      -> hit ~(4,4), distance ~5.657
-	// TODO: hit lies outside the segment         -> nullopt
-	// TODO: parallel ray                         -> nullopt
-	// TODO: ray starts on the segment            -> distance 0 (your defined behavior)
-	// TODO: ray hits exactly at an endpoint      -> hit (defined behavior)
-	// TODO: collinear ray and segment            -> nullopt (defined behavior)
-	// TODO: wall beyond maxDistance              -> nullopt
+	// hit ~(4,4), distance ~5.657
+	// 4. diagonal ray vs horizontal wall
+	{
+		const std::vector<Segment> walls = {
+			Segment{ { 2.f, 4.f }, { 6.f, 4.f } }
+		};
+
+		const auto hit = castRay(
+			makeRay(0, 0, 1, 1), walls, 1000.f
+		);
+
+		assert(hit.has_value());
+		assert(nearlyEqual(hit->point.x, 4.f));
+		assert(nearlyEqual(hit->point.y, 4.f));
+		assert(nearlyEqual(hit->distance, std::sqrt(32.f)));
+	}
+
+	// hit lies outside the segment -> nullopt
+	// 5. intersection lies outside the segment
+	{
+		const std::vector<Segment> walls = {
+			Segment{ { 5.f, 2.f }, { 5.f, 5.f } }
+		};
+
+		const auto hit = castRay(
+			makeRay(0, 0, 1, 0), walls, 1000.f
+		);
+
+		assert(!hit.has_value());
+	}
+
+	// 6. parallel ray
+	{
+		const std::vector<Segment> walls = {
+			Segment{ { 0.f, 5.f }, { 10.f, 5.f } }
+		};
+
+		const auto hit = castRay(
+			makeRay(0, 0, 1, 0), walls, 1000.f
+		);
+
+		assert(!hit.has_value());
+	}
+
+	// 7. ray starts on the segment
+	{
+		const std::vector<Segment> walls = {
+			Segment{ { 0.f, -2.f }, { 0.f, 2.f } }
+		};
+
+		const auto hit = castRay(
+			makeRay(0, 0, 1, 0), walls, 1000.f
+		);
+
+		assert(hit.has_value());
+		assert(nearlyEqual(hit->distance, 0.f));
+		assert(nearlyEqual(hit->point.x, 0.f));
+		assert(nearlyEqual(hit->point.y, 0.f));
+	}
+
+	// 8. ray hits exactly at a segment endpoint
+	{
+		const std::vector<Segment> walls = {
+			Segment{ { 5.f, 0.f }, { 5.f, 4.f } }
+		};
+
+		const auto hit = castRay(
+			makeRay(0, 0, 1, 0), walls, 1000.f
+		);
+
+		assert(hit.has_value());
+		assert(nearlyEqual(hit->point.x, 5.f));
+		assert(nearlyEqual(hit->point.y, 0.f));
+	}
+
+	// 9. collinear ray and segment
+	{
+		const std::vector<Segment> walls = {
+			Segment{ { 5.f, 0.f }, { 10.f, 0.f } }
+		};
+
+		const auto hit = castRay(
+			makeRay(0, 0, 1, 0), walls, 1000.f
+		);
+
+		assert(!hit.has_value());
+	}
+
+	// 10. wall beyond maxDistance
+	{
+		const std::vector<Segment> walls = {
+			Segment{ { 10.f, -2.f }, { 10.f, 2.f } }
+		};
+
+		const auto hit = castRay(
+			makeRay(0, 0, 1, 0), walls, 5.f
+		);
+
+		assert(!hit.has_value());
+	}
+
+	std::cout << "[PASS] All geometry tests passed!\n";
 }
