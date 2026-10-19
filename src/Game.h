@@ -1,11 +1,15 @@
 #pragma once
 
+#include "DebugState.h"
+#include "DebugUI.h"
 #include "Entity.h"
 #include "EntityManager.h"
 #include "Geometry.h"
 
 #include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/System/Clock.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <SFML/Window/VideoMode.hpp>
 
 #include <memory>
 #include <optional>
@@ -15,10 +19,16 @@
 
 class Game
 {
-	EntityManager m_entityManager;
+	// IMPORTANT: declare the window BEFORE m_debugUI.
+	// Members are destroyed in reverse order, so DebugUI shuts down while the window is still alive.
+	sf::Clock m_deltaClock;
 	sf::RenderWindow m_window;
+	DebugUI          m_debugUI;
+	DebugState       m_debugState;
+	EntityManager m_entityManager;
+
 	std::shared_ptr<Entity> m_player;
-	
+
 	std::random_device m_randomDevice;
 	mutable std::mt19937 m_engine{ m_randomDevice() }; // seeded once; rng() draws from this, not a fresh engine per call
 
@@ -47,6 +57,7 @@ class Game
 	void quit();
 	void spawnPlayer();
 	
+	void sGui();
 	void sRender();
 	void sPlayerInput();
 	void sMovement();
@@ -56,7 +67,12 @@ class Game
 	T rng(T min, T max) const;
 
 public:
-	Game() = default;
+	Game::Game()
+		: m_window(sf::VideoMode({ 800u, 600u }), "Visibility Sandbox")
+		, m_debugUI(m_window)
+	{
+		m_window.setFramerateLimit(60);
+	}
 
 	void run();
 };

@@ -1,4 +1,5 @@
 #include "Components.h"
+#include "DebugPanels.h"
 #include "Game.h"
 #include "Geometry.h"
 #include "Vec2.h"
@@ -19,7 +20,6 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
-#include <SFML/Window/VideoMode.hpp>
 
 #include <iterator>
 #include <memory>
@@ -32,7 +32,7 @@ namespace
 void Game::run()
 {
 	init();
-
+	
 	while (m_running)
 	{
 		update();
@@ -44,11 +44,15 @@ void Game::update()
 {
 	m_entityManager.update();
 
-	sPlayerInput();
+	sPlayerInput();                               // polls events -> processEvent
+	m_debugUI.beginFrame(m_deltaClock.restart()); // opens the ImGui frame
+	sGui();										  // builds the panel
+
 	sMovement();
 	sCollision();
 	sRaycast();
 	sRender();
+	m_debugUI.render();
 }
 
 void Game::quit()
@@ -59,9 +63,6 @@ void Game::quit()
 void Game::init()
 {
 	runGeometryTests();
-
-	m_window.create(sf::VideoMode({ 800, 600 }), "2D Visibility Sandbox");
-	m_window.setFramerateLimit(60);
 
 	spawnPlayer();
 	spawnWalls();
@@ -148,6 +149,7 @@ void Game::sRender()
 		}
 	}
 
+	m_debugUI.render();
 	m_window.display();
 }
 
@@ -218,9 +220,23 @@ void Game::sPlayerInput()
 {
 	while (const std::optional event = m_window.pollEvent())
 	{
+		m_debugUI.processEvent(*event);
+
 		if (event->is<sf::Event::Closed>())
 		{
 			quit();
+		}
+
+		// Gate gameplay input while ImGui has focus:
+		if (event->is<sf::Event::KeyPressed>() || event->is<sf::Event::KeyReleased>())
+		{
+			if (m_debugUI.wantsKeyboard())
+				continue;
+		}
+		if (event->is<sf::Event::MouseButtonPressed>() || event->is<sf::Event::MouseButtonReleased>())
+		{
+			if (m_debugUI.wantsMouse())
+				continue;
 		}
 
 		if (const auto* windowResized = event->getIf<sf::Event::Resized>())
@@ -389,4 +405,9 @@ void Game::drawVisibilityDebug()
 		marker.setFillColor(sf::Color::Red);
 		m_window.draw(marker);
 	}
+}
+
+void Game::sGui()
+{
+	drawVisibilityPanel(m_debugState);
 }
